@@ -1,0 +1,16 @@
+[
+    {  
+        "question": "Would you like to start a new game?",
+        "answers": ["yes", "no"]
+    },
+
+    {
+        "question": "What is your discord alias hUH",
+        "answers": ["flip", "flep", "flop", "pilf"]
+
+    },
+    {
+        "question": "who's the bestest cat????",
+        "answers": ["caesar", "potato", "summer child"]
+    }
+]
