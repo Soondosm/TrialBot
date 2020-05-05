@@ -1,0 +1,26 @@
+{
+  "name": "trialbot",
+  "version": "1.0.0",
+  "description": "A Discord Bot to be hosted on raspberry pi. Originally a text-based adventure game written in Java in BlueJ IDE, converting here to Javascript (Node.js and Discord.js).",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "soondos",
+  "license": "ISC",
+  "dependencies": {
+    "discord.js": "^11.6.4",
+    "eslint": "^6.8.0",
+    "mysql": "^2.18.1"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Soondosm/TrialBot.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Soondosm/TrialBot/issues"
+  },
+  "homepage": "https://github.com/Soondosm/TrialBot#readme"
+}
