@@ -9,12 +9,14 @@ let dogRooms = new Map(); // map of what doge says in each room
 let variable = Math.floor(Math.random() * dogSpeak.length);
 
 class HellHound extends Creature {
-    constructor(cName, cDescription, damage, health) {
+    super(cName, cDescription, damage, health) {
         this.cName = cName;
         this.cDescription = cDescription;
         this.damage = damage;
         this.health = health;
     }
+    // constructor(cName, cDescription, damage, health) {
+    // }
 
     createDogeWords() {
         dogSpeak.push("The hellhound nudges you playfully.");
@@ -28,7 +30,7 @@ class HellHound extends Creature {
     }
 
     createRoomWords() {
-        console.log("room test name: ??? " + Game.start_room.room.getRoomName());
+  //      console.log("room test name: ??? " + Game.start_room.getRoomName());
         dogRooms.set("start room", "The hellhound sniffs the spot on the floor where you woke up.");
         dogRooms.set("scratched-up room", "The hellhound's tail falls between its legs. It isn't very happy here...");
         dogRooms.set("expansive room", "The hellhound growls and stands in front of you protectively.");

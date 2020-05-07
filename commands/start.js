@@ -1,5 +1,6 @@
 const index = require('/Users/soondos/Desktop/independent/TrialBot/index.js');
 const Game = require('/Users/soondos/Desktop/independent/TrialBot/commands/game.js');
+const Room = require('/Users/soondos/Desktop/independent/TrialBot/objects/room.js');
 const game = new Game();
 let gameBoolean = 0; // default = we are not in game. 
 
@@ -28,6 +29,7 @@ class Start {
              if(rows.length < 1) {
                  sql = `INSERT INTO user_info (userID, userTag) VALUES ('${input.author.id}', '${input.member.user.tag}')`;
                  input.channel.send('aw boo u a new game eh?');
+                 input.channel.send(this.printWelcome());
              } 
              else {
                 input.channel.send(`hunty u already have save data`);
@@ -41,9 +43,36 @@ class Start {
             else {
                 gameBoolean = 0;
             }
-             game.inGame(client, input, connection);
+            input.channel.send(game.getCurrentRoom().getLongDescription());
+            game.inGame(client, input, connection);
          });
      }
+
+     printWelcome() {
+        return "You find yourself lying on the floor of a barren room. \n" +
+        "How did you get here? \n" +
+        "You dust off your robes before slowly rising to a stand. \n" + 
+        "You remember now. You, a novice mage, ran into one of the \n" +
+        "most powerful mages in the kingdom. She's taking apprentices, \n" +
+        "and it seems she took a liking to you. \n" +
+        "She won't just let you study under her without a test, though. \n" +
+        "This must be why she sent you here. \n" +
+        "'Good luck, young one.' You suddenly hear a voice. \n" +
+        "The master mage's voice. \n" +
+        "Well. Here goes nothing. \n \n" +
+        "display lets you check your health, items, and backpack weight. \n" +
+        "go + a cardinal direction lets you move through rooms. \n" +
+        "back lets you go to the room you were last in. \n" +
+        "use + an item you are holding lets you use that item or cast from that spellbook. \n" +
+        "take + an item in the room lets you pick up an item to take with you. \n" +
+        "drop + an item you are holding lets you drop that item into the room you're in. \n" +
+        "give + an item you are holding + a creature lets you give an item to a creature. \n" +
+        "inspect + an item you are holding lets you view the item's description. \n" +
+        "attack lets you attack whatever is in the room with your bare fists. \n" +
+        "warp, if used in the right room, lets you teleport to a random place. \n" +
+        "help lets you see your commands. \n" +
+        "quit lets you quit the game. \n";
+    }
 
 }
 

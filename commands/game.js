@@ -2,14 +2,18 @@ const config = require('/Users/soondos/Desktop/independent/TrialBot/configure.js
 const Room = require('/Users/soondos/Desktop/independent/TrialBot/objects/room.js');
 const Item = require('/Users/soondos/Desktop/independent/TrialBot//objects/item.js');
 const Hellhound = require('/Users/soondos/Desktop/independent/TrialBot/objects/hellhound.js');
+const Creature = require('/Users/soondos/Desktop/independent/TrialBot/objects/creature.js');
 let hellhound = new Hellhound();
+
+
+let start_room, boss_room, scratched_room, musty_room, eerie_room, fight_room,
+earthy_room, dim_room, quiet_room, cluttered_room, warp_room; // rooms
+
+let bottled_fairy, gargoyle, master, skeleton, fighting_creature; // creatures
 
 let currentRoom = new Room();
 let heldItems = new Array();
 let randomRooms = new Array();
-
-let start_room, boss_room, scratched_room, musty_room, eerie_room, fight_room,
-earthy_room, dim_room, quiet_room, cluttered_room, warp_room; // rooms
 
 
 // module.exports = { // these are functions that will not be called within this file, but called by another.
@@ -21,23 +25,30 @@ class Game {
             this.client = client;
             this.input = input;
             this.connection = connection;
+
+            console.time(); // performance test
+            this.createRooms();
+            this.createItems();
+            this.createCreatures();
+            hellhound.createDogeWords();
+            hellhound.createRoomWords();
+            console.timeEnd(); // performance test
+            let HP = 20;
+            const weightCapacity = 14;
+            const turnLimit = 90;
+            let currentTurn = 0;
+            let dogFriend = false;
+            let fairyFriend = false;
+            let warpDestroyed = false;
+            let plantDestroyed = false;
         }
             inGame(client, input, connection) {
-                this.createRooms();
-                this.createItems();
-                this.createCreatures();
-                hellhound.createDogeWords();
-                hellhound.createRoomWords();
-                let HP = 20;
-                const weightCapacity = 14;
-                const turnLimit = 90;
-                let currentTurn = 0;
-                let dogFriend = false;
-                let fairyFriend = false;
-                let warpDestroyed = false;
-                let plantDestroyed = false;
+               
                 
+               
+
                 client.on('message', async gameMsg=>{ 
+                    // if(gameMsg.author.client) return;
                     if(gameMsg.channel.type === 'dm') return;
                     let command = gameMsg.content.substring(config.Prefix.length).split(' '); // allows us to implement prefix at beginning
                     switch(command[0]) {
@@ -46,7 +57,12 @@ class Game {
                             break;
                     
                         case 'go':
-                            gameMsg.channel.send('go where?');
+                            if(!command[1]) {
+                                gameMsg.channel.send('go where?');
+                            } else {
+                                this.goRoom(command[1], gameMsg);
+                            }
+
                             break;
 
                         case 'use':
@@ -85,10 +101,8 @@ class Game {
 
                 });
         }
-
+        // note to make cleaner via loop.
     createRooms() {
-        console.log("vroom room");
-
         start_room = new Room("start room", "Oh, this is the room you woke up in...");
         boss_room = new Room("expansive room", "This is a super big room...it looks elegant but also somewhat creepy.");
         scratched_room = new Room("scratched-up room", "This room has claw marks all over it. It smells like animals.");
@@ -189,10 +203,42 @@ class Game {
     createCreatures() {
         console.log("creature creeper");
 
+        //creates creatures
+        hellhound = new Hellhound("Hellhound", "It growls menacingly at you. It's held in place only by rope...", 4, 10);
+        bottled_fairy = new Creature("Bottled_Fairy", "She's crying with her face buried in her hands. \n" +
+        "Her voice sounds like sad little bells...", 3, 5);
+        gargoyle = new Creature("Gargoyle", "The gargoyle statue thing is sitting in a teeny chair in front of a table, \n" +
+        "holding a knife over what looks like a flat rock shaped to look like a sunny-side up egg. \n" +
+        "It's completely frozen...is it even real? Can it move?", 6, 25);
+        master = new Creature("Master", "It's your master...", 5, 35);
+        skeleton = new Creature("Skeletal_Arm", "This skeletal arm is sticking out in the middle of the ground, \n" +
+        "as if the person who used to own it died while trying to reach for something...", 1, 3);
+        
+        fighting_creature = new Creature("", "", 0, 0); //this creature will have nothing in it until it is replaced by an actual creature.
+
+        //initializes placement of creatures.
+        scratched_room.createCreature(hellhound);
+        dim_room.createCreature(bottled_fairy);
+        quiet_room.createCreature(gargoyle);
+        eerie_room.createCreature(skeleton);
+        boss_room.createCreature(master);
+        
+        fight_room.createCreature(fighting_creature); //places the fighting creature into combat room. Note
+        //that current room is never actually set to fight room at any point in the game.
+
+    }
+    getCurrentRoom() {
+        return currentRoom
     }
 
-    getRoomName() {
-        
+    goRoom(direction, gameMsg) {
+        let nextRoom = currentRoom.getExit(direction);
+        if(!nextRoom) {
+            gameMsg.channel.send(`There's no door here.`);
+        } else {
+            currentRoom = nextRoom;
+            gameMsg.channel.send(currentRoom.getLongDescription());
+        }
     }
 }
 
