@@ -1,11 +1,16 @@
-let exits = new Map(); // string key, Room variable
-let items = new Map(); // string name, item object
-let creatures = new Map();
+// let exits, items, creatures;
 
 class Room {
     constructor(name, description) {
         this.name = name;
         this.description = description;
+
+        let exits = new Map(); // key: string(name of room), value: Room
+        let items = new Map(); // string name, item object
+        let creatures = new Map();
+        this.exits = exits;
+        this.items = items;
+        this.creatures = creatures;
     }
 
     getRoomName() {
@@ -25,11 +30,16 @@ class Room {
     }
 
     getExit(direction) {
-        return exits.get(direction);
+        return this.exits.get(direction);
+    }
+
+    hasExit(direction) {
+        console.log(this.exits.has(direction));
+        return this.exits.has(direction);
     }
 
     setExit(direction, neighbor) {
-        exits.set(direction, neighbor);
+        this.exits.set(direction, neighbor);
     }
 
     /** 
@@ -39,24 +49,24 @@ class Room {
      * @return The room in the given direction.
      */
     getNewRoom(direction) {
-        return exits.get(direction); 
+        return this.exits.get(direction); 
     }
 
     getExitString() {
         let returnString = "There are doors on: ";
-        let keys = Array.from(exits.keys());
+        let keys = Array.from(this.exits.keys());
         returnString += keys.join(", ") + ".";
         return returnString
     }
 
     // creates item and sets it to "items" hashmap
     createItem(item) {
-        items.set(item.getName(), item);
+        this.items.set(item.getName(), item);
     }
 
     getItemString() {
         let returnString = "The items in this room are: ";
-        let keys = Array.from(items.keys()); // get the map's keys as an iterator and convert it into an Array.
+        let keys = Array.from(this.items.keys()); // get the map's keys as an iterator and convert it into an Array.
         returnString += keys.join(", "); // join the whole array as a string with commas separating each exit.
         console.log(returnString);
         return returnString + "."
@@ -68,11 +78,11 @@ class Room {
      * @return none.
      */
     removeItem(item) {
-        items.delete(item);
+        this.items.delete(item);
     }
 
     createCreature(creature) {
-        creatures.set(creature.getCreatureName(), creature);
+        this.creatures.set(creature.getCreatureName(), creature);
     }
 
     /**
@@ -82,7 +92,7 @@ class Room {
      */
     getCreatureString() { // NOTE: TURN THE THREE GET STRING FUNCTIONS INTO ONE METHOD W/ JSON STRING GRAB
         let returnString = "Oh! There's a ";
-        let keys = Array.from(creatures.keys());
+        let keys = Array.from(this.creatures.keys());
         returnString += keys.join(", ") + " here.";
         return returnString
     }
@@ -92,7 +102,7 @@ class Room {
      * @param thing the String name of the creature we want to remove.
      */
     removeCreature(creature) {
-        creatures.delete(creature);
+        this.creatures.delete(creature);
     }
 
 }

@@ -1,5 +1,5 @@
 const config = require('/Users/soondos/Desktop/independent/TrialBot/configure.json'); // configuration file holding token etc.
-const Room = require('/Users/soondos/Desktop/independent/TrialBot/objects/room.js');
+let Room = require('/Users/soondos/Desktop/independent/TrialBot/objects/room.js');
 const Item = require('/Users/soondos/Desktop/independent/TrialBot//objects/item.js');
 const Hellhound = require('/Users/soondos/Desktop/independent/TrialBot/objects/hellhound.js');
 const Creature = require('/Users/soondos/Desktop/independent/TrialBot/objects/creature.js');
@@ -11,14 +11,10 @@ earthy_room, dim_room, quiet_room, cluttered_room, warp_room; // rooms
 
 let bottled_fairy, gargoyle, master, skeleton, fighting_creature; // creatures
 
-let currentRoom = new Room();
+let currentRoom = new Room("new room", "this is a new room.");
 let heldItems = new Array();
 let randomRooms = new Array();
 
-
-// module.exports = { // these are functions that will not be called within this file, but called by another.
-
-   // inGame: function(client, args, connection, game) {
 class Game {
     
         constructor(client, input, connection) {
@@ -43,6 +39,7 @@ class Game {
             let plantDestroyed = false;
         }
             inGame(client, input, connection) {
+              
                
                 
                
@@ -60,6 +57,7 @@ class Game {
                             if(!command[1]) {
                                 gameMsg.channel.send('go where?');
                             } else {
+                                console.log(command[1]);
                                 this.goRoom(command[1], gameMsg);
                             }
 
@@ -96,6 +94,9 @@ class Game {
                         case 'help':
                             gameMsg.channel.send('WE IN GAME WHAT HELP U NEED');
                             break;
+
+                        case 'test':
+                            gameMsg.channel.send('okeydoke...');
                      }
             
 
@@ -170,7 +171,6 @@ class Game {
         randomRooms.push(cluttered_room);
         randomRooms.push(eerie_room);
         randomRooms.push(warp_room);
-
     }
 
     createItems() {
@@ -233,9 +233,9 @@ class Game {
 
     goRoom(direction, gameMsg) {
         let nextRoom = currentRoom.getExit(direction);
-        if(!nextRoom) {
+        if(!currentRoom.hasExit(direction)) {
             gameMsg.channel.send(`There's no door here.`);
-        } else {
+        } else if(nextRoom == boss_room && ){
             currentRoom = nextRoom;
             gameMsg.channel.send(currentRoom.getLongDescription());
         }
