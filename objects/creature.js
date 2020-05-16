@@ -13,6 +13,11 @@ class Creature {
         return this.cDescription;
     }
 
+    getFullDescription() {
+        return "\n Oh! There's a " + this.cDescription + " here." +
+         "\n" + this.cDescription;
+    }
+
     getCreatureDmg() {
         return this.damage;
     }

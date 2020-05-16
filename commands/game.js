@@ -1,13 +1,18 @@
 const config = require('/Users/soondos/Desktop/independent/TrialBot/configure.json'); // configuration file holding token etc.
-let Room = require('/Users/soondos/Desktop/independent/TrialBot/objects/room.js');
+const Room = require('/Users/soondos/Desktop/independent/TrialBot/objects/room.js');
 const Item = require('/Users/soondos/Desktop/independent/TrialBot//objects/item.js');
+const Backpack = require('/Users/soondos/Desktop/independent/TrialBot/objects/backpack.js');
 const Hellhound = require('/Users/soondos/Desktop/independent/TrialBot/objects/hellhound.js');
 const Creature = require('/Users/soondos/Desktop/independent/TrialBot/objects/creature.js');
 let hellhound = new Hellhound();
+let backpack = new Backpack();
 
 
 let start_room, boss_room, scratched_room, musty_room, eerie_room, fight_room,
-earthy_room, dim_room, quiet_room, cluttered_room, warp_room; // rooms
+earthy_room, dim_room, quiet_room, cluttered_room, warp_room, lastRoom; // rooms
+
+let hurt_fairy, dead_fairy, boss_key, bone, normal_bone, knife, book_rest,
+ book_fire, book_firaga, book_growth; //items
 
 let bottled_fairy, gargoyle, master, skeleton, fighting_creature; // creatures
 
@@ -174,18 +179,18 @@ class Game {
     }
 
     createItems() {
-        let hurt_fairy = new Item("hurt_fairy", "A 3-inch tall fairy, missing a wing, is trembling." + "\n" + 
+        hurt_fairy = new Item("hurt_fairy", "A 3-inch tall fairy, missing a wing, is trembling." + "\n" + 
         "It doesn't look like he can move very far.", 1, 0);
-        let dead_fairy = new Item("dead_fairy", "The fairy's dead...", 1, 0);
-        let boss_key = new Item("boss_key", "A glittering key sits on the floor, underneath the fairy.", 4, 0);
-        let bone = new Item("charred_bone", "This looks like a sizeable bone--perfect for a dog to chew on.", 2, 0);
-        let normal_bone = new Item("bone", "This is a pretty decent bone for a dog to chew on.", 2, 0);
-        let knife = new Item("knife", "A shiny iron knife. A gargoyle was trying to enjoy" +
+        dead_fairy = new Item("dead_fairy", "The fairy's dead...", 1, 0);
+        boss_key = new Item("boss_key", "A glittering key sits on the floor, underneath the fairy.", 4, 0);
+        bone = new Item("charred_bone", "This looks like a sizeable bone--perfect for a dog to chew on.", 2, 0);
+        normal_bone = new Item("bone", "This is a pretty decent bone for a dog to chew on.", 2, 0);
+        knife = new Item("knife", "A shiny iron knife. A gargoyle was trying to enjoy" +
         "its stone omelette with this.", 2, 2);
-        let book_rest = new Item("spellbook_rest", "A mage book that, when cast, puts enemies to sleep.", 10, 0);
-        let book_fire = new Item("spellbook_fire", "A mage book that, when cast, flings a small fireball.", 10, 3);
-        let book_firaga = new Item("spellbook_firaga", "A mage book that, when cast, flings a large fireball.", 5, 6);
-        let book_growth = new Item("spellbook_growth", "A mage book that, when cast, promotes the growth of plantlife.", 10, 0);
+        book_rest = new Item("spellbook_rest", "A mage book that, when cast, puts enemies to sleep.", 10, 0);
+        book_fire = new Item("spellbook_fire", "A mage book that, when cast, flings a small fireball.", 10, 3);
+        book_firaga = new Item("spellbook_firaga", "A mage book that, when cast, flings a large fireball.", 5, 6);
+        book_growth = new Item("spellbook_growth", "A mage book that, when cast, promotes the growth of plantlife.", 10, 0);
         
         // initializes the placement of items within rooms.
         musty_room.createItem(book_fire);
@@ -201,17 +206,15 @@ class Game {
 
 
     createCreatures() {
-        console.log("creature creeper");
-
         //creates creatures
         hellhound = new Hellhound("Hellhound", "It growls menacingly at you. It's held in place only by rope...", 4, 10);
-        bottled_fairy = new Creature("Bottled_Fairy", "She's crying with her face buried in her hands. \n" +
+        bottled_fairy = new Creature("Bottled Fairy", "She's crying with her face buried in her hands. \n" +
         "Her voice sounds like sad little bells...", 3, 5);
         gargoyle = new Creature("Gargoyle", "The gargoyle statue thing is sitting in a teeny chair in front of a table, \n" +
         "holding a knife over what looks like a flat rock shaped to look like a sunny-side up egg. \n" +
         "It's completely frozen...is it even real? Can it move?", 6, 25);
         master = new Creature("Master", "It's your master...", 5, 35);
-        skeleton = new Creature("Skeletal_Arm", "This skeletal arm is sticking out in the middle of the ground, \n" +
+        skeleton = new Creature("Skeletal Arm", "This skeletal arm is sticking out in the middle of the ground, \n" +
         "as if the person who used to own it died while trying to reach for something...", 1, 3);
         
         fighting_creature = new Creature("", "", 0, 0); //this creature will have nothing in it until it is replaced by an actual creature.
@@ -235,10 +238,23 @@ class Game {
         let nextRoom = currentRoom.getExit(direction);
         if(!currentRoom.hasExit(direction)) {
             gameMsg.channel.send(`There's no door here.`);
-        } else if(nextRoom == boss_room && ){
+        } else if(nextRoom == boss_room && (backpack.isInBackpack(boss_key) == false)) {
+            gameMsg.channel.send('This door is locked.');
+        } else {
+            lastRoom = currentRoom; // saves the previous room we were at to come back to later.
+            if(lastRoom == cluttered_room && (lastRoom.getItem(hurt_fairy.getName()) != null)) {
+                this.fairyDies();
+            }
             currentRoom = nextRoom;
             gameMsg.channel.send(currentRoom.getLongDescription());
         }
+    }
+    // executes if we let the fairy die.
+    fairyDies() {
+        cluttered_room.removeItem(hurt_fairy.getName());
+        cluttered_room.setRoomDescription("This looks like your master's messy study space...but the little injured fairy" + "\n" +
+        "here is laying on the floor, quiet. He may have died from his wounds...");
+
     }
 }
 

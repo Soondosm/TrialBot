@@ -13,6 +13,12 @@ class Room {
         this.creatures = creatures;
     }
 
+
+
+//                                        --- ROOM IMPLEMENTATION ---                                           //
+
+
+
     getRoomName() {
         return this.name;
     }
@@ -26,21 +32,16 @@ class Room {
     }
 
     getLongDescription() {
-        return "You are in " + this.name + ". \n" + this.description + "\n" + this.getExitString();
-    }
-
-    getExit(direction) {
-        return this.exits.get(direction);
-    }
-
-    hasExit(direction) {
-        console.log(this.exits.has(direction));
-        return this.exits.has(direction);
-    }
-
-    setExit(direction, neighbor) {
-        this.exits.set(direction, neighbor);
-    }
+        let returnString = "You are in " + this.name + ". \n" + this.description + "\n" + this.getExitString()
+        + "\n";
+        if(this.hasItem() > 0) {
+           returnString += this.getItemString();
+        }
+        if(this.hasCreature() > 0) {
+           returnString += this.getCreatureString();
+        }
+        return returnString;
+    } 
 
     /** 
      * Return the room that is reached if we go from this room in direction
@@ -48,9 +49,18 @@ class Room {
      * @param direction The exit's direction.
      * @return The room in the given direction.
      */
-    getNewRoom(direction) {
-        return this.exits.get(direction); 
+    getExit(direction) {
+        return this.exits.get(direction);
     }
+
+    hasExit(direction) {
+        return this.exits.has(direction);
+    }
+
+    setExit(direction, neighbor) {
+        this.exits.set(direction, neighbor);
+    }
+
 
     getExitString() {
         let returnString = "There are doors on: ";
@@ -58,6 +68,12 @@ class Room {
         returnString += keys.join(", ") + ".";
         return returnString
     }
+
+
+
+//                                        --- ITEM IMPLEMENTATION ---                                           //
+
+
 
     // creates item and sets it to "items" hashmap
     createItem(item) {
@@ -68,8 +84,16 @@ class Room {
         let returnString = "The items in this room are: ";
         let keys = Array.from(this.items.keys()); // get the map's keys as an iterator and convert it into an Array.
         returnString += keys.join(", "); // join the whole array as a string with commas separating each exit.
-        console.log(returnString);
         return returnString + "."
+    }
+    
+    // does the room we're currently in have an item in it? returns integer of size.
+    hasItem() {
+        return this.items.size;
+    }
+
+    getItem(item) {
+        return this.items.get(item)
     }
 
     /**
@@ -81,8 +105,21 @@ class Room {
         this.items.delete(item);
     }
 
+
+
+
+//                                       --- CREATURE IMPLEMENTATION ---                                        //
+
+
+
+
     createCreature(creature) {
         this.creatures.set(creature.getCreatureName(), creature);
+    }
+
+    // does the room we're currently in have a creature in it? returns integer of size.
+    hasCreature() {
+       return this.creatures.size;
     }
 
     /**
