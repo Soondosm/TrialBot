@@ -4,7 +4,6 @@ class Room {
     constructor(name, description) {
         this.name = name;
         this.description = description;
-
         let exits = new Map(); // key: string(name of room), value: Room
         let items = new Map(); // string name, item object
         let creatures = new Map();
@@ -102,7 +101,8 @@ class Room {
      * @return none.
      */
     removeItem(item) {
-        this.items.delete(item);
+        this.items.delete(item.getName());
+        console.log("item deleted???");
     }
 
 

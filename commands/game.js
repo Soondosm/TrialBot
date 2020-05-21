@@ -4,6 +4,10 @@ const Item = require('/Users/soondos/Desktop/independent/TrialBot//objects/item.
 const Backpack = require('/Users/soondos/Desktop/independent/TrialBot/objects/backpack.js');
 const Hellhound = require('/Users/soondos/Desktop/independent/TrialBot/objects/hellhound.js');
 const Creature = require('/Users/soondos/Desktop/independent/TrialBot/objects/creature.js');
+
+const InGame = require('/Users/soondos/Desktop/independent/TrialBot/objects/ingame.js');
+let gameBoolean = new InGame(); // default = we are not in game. 
+
 let hellhound = new Hellhound();
 let backpack = new Backpack();
 
@@ -16,9 +20,19 @@ let hurt_fairy, dead_fairy, boss_key, bone, normal_bone, knife, book_rest,
 
 let bottled_fairy, gargoyle, master, skeleton, fighting_creature; // creatures
 
-let currentRoom = new Room("new room", "this is a new room.");
+let currentRoom = new Room("current room", "this is our current room.");
 let heldItems = new Array();
 let randomRooms = new Array();
+
+const weightCapacity = 14;
+const maxHealth = 20;
+let HP = 20;
+const turnLimit = 90;
+let currentTurn = 0;
+let dogFriend = false;
+let fairyFriend = false;
+let warpDestroyed = false;
+let plantDestroyed = false;
 
 class Game {
     
@@ -34,35 +48,36 @@ class Game {
             hellhound.createDogeWords();
             hellhound.createRoomWords();
             console.timeEnd(); // performance test
-            let HP = 20;
-            const weightCapacity = 14;
-            const turnLimit = 90;
-            let currentTurn = 0;
-            let dogFriend = false;
-            let fairyFriend = false;
-            let warpDestroyed = false;
-            let plantDestroyed = false;
         }
-            inGame(client, input, connection) {
-              
-               
-                
-               
+            inGame(client, input, connection) {               
 
                 client.on('message', async gameMsg=>{ 
-                    // if(gameMsg.author.client) return;
+                    if(gameBoolean.getGameBoolean() == false) return;
                     if(gameMsg.channel.type === 'dm') return;
                     let command = gameMsg.content.substring(config.Prefix.length).split(' '); // allows us to implement prefix at beginning
+                    currentTurn++;
+
+                    switch(currentTurn, HP) {
+                        case currentTurn > turnLimit:
+                            this.turnBorneLoss(gameMsg);
+                            break;
+                        case HP <= 0:
+                            this.healthBorneLoss(gameMsg);
+                            break;
+                    }
+                    // if(currentTurn > turnLimit) {
+                        
+                    // }
+
                     switch(command[0]) {
                         case 'display':
-                            gameMsg.channel.send('u got dis shit');
+                            currentRoom.getItemString();
+                            this.printDisplay(gameMsg);
                             break;
-                    
                         case 'go':
                             if(!command[1]) {
                                 gameMsg.channel.send('go where?');
                             } else {
-                                console.log(command[1]);
                                 this.goRoom(command[1], gameMsg);
                             }
 
@@ -73,11 +88,19 @@ class Game {
                             break;
                 
                         case 'take':
-                            gameMsg.channel.send('take wat');
+                            if(!command[1]) {
+                                gameMsg.channel.send('take what?');
+                            } else {
+                                this.takeItem(command[1], gameMsg);
+                            }
                             break;
 
                         case 'drop':
-                            gameMsg.channel.send('drop wat');
+                            if(!command[1]) {
+                                gameMsg.channel.send('drop what?');
+                            } else {
+                                this.dropItem(command[1], gameMsg);
+                            }
                             break;
 
                         case 'give':
@@ -100,8 +123,9 @@ class Game {
                             gameMsg.channel.send('WE IN GAME WHAT HELP U NEED');
                             break;
 
-                        case 'test':
-                            gameMsg.channel.send('okeydoke...');
+                        case 'quit':
+                            this.quitProcess(gameMsg);
+
                      }
             
 
@@ -234,6 +258,10 @@ class Game {
         return currentRoom
     }
 
+    /** 
+     * Try to go in one direction. If there is an exit, enter
+     * the new room, otherwise print an error message.
+     */
     goRoom(direction, gameMsg) {
         let nextRoom = currentRoom.getExit(direction);
         if(!currentRoom.hasExit(direction)) {
@@ -242,7 +270,13 @@ class Game {
             gameMsg.channel.send('This door is locked.');
         } else {
             lastRoom = currentRoom; // saves the previous room we were at to come back to later.
-            if(lastRoom == cluttered_room && (lastRoom.getItem(hurt_fairy.getName()) != null)) {
+            /*If we exit the cluttered room and leave the hurt fairy item in it, fairy dies and cant be taken anymore.*/
+            // let fairyTest = hurt_fairy.getName(); // should be a string, "hurt_fairy"
+            if(currentRoom == cluttered_room && (currentRoom.getItemString().includes(hurt_fairy.getName()) == true)
+          //   && (backpack.isInBackpack(hurt_fairy) == false)
+            ) { 
+                console.log(currentRoom.getItemString());
+                console.log("hurt fairy registered: " + currentRoom.getItemString().includes(hurt_fairy.getName()));
                 this.fairyDies();
             }
             currentRoom = nextRoom;
@@ -256,6 +290,67 @@ class Game {
         "here is laying on the floor, quiet. He may have died from his wounds...");
 
     }
+
+    takeItem(item, gameMsg) {
+        const chosenItem = currentRoom.getItem(item);
+        if(chosenItem == null) {
+            gameMsg.channel.send(`That item isn't in this room.`);
+        }else if(chosenItem.getWeight() + backpack.getWeight() > weightCapacity) { // if new item weight + backpack weight > weight capacity (14)
+            gameMsg.channel.send(`You're carrying too much! Drop something first.`);
+        } else {
+            backpack.backpackAdd(chosenItem, currentRoom); 
+            gameMsg.channel.send(`You took the ` + item + `.`);
+        }
+    }
+
+    dropItem(item, gameMsg) { //item is a STRING. we need to convert to item.
+        let bagString = backpack.isInBackpack(item);
+        if(bagString == null) {
+            gameMsg.channel.send(`That item isn't in your bag.`);
+        }else if(bagString == hurt_fairy) {
+            backpack.backpackDelete(bagString);
+            currentRoom.createItem(dead_fairy);
+            gameMsg.channel.send(`The fairy drops to the ground with a tiny thud, since he can't fly. He's not moving...`);
+        } else {
+            backpack.backpackDrop(bagString, currentRoom);
+            gameMsg.channel.send(`You dropped the ` + item + ` on the floor in front of you.`);
+        }
+    }
+
+    printDisplay(gameMsg) {
+        gameMsg.channel.send(`You are currently carrying ` + backpack.getBagList());
+        gameMsg.channel.send(`These items together weigh ` + backpack.getWeight() + ` pounds. You can carry up to ` + weightCapacity + `.`);
+        gameMsg.channel.send(`Your current health is ` + HP + `/` + maxHealth + `.`);
+        gameMsg.channel.send(`You have currently taken ` + currentTurn + ` actions. Don't fool around too long...`);
+        if(dogFriend == true) {
+            gameMsg.channel.send(`Your new hellhound friend is following you!`);
+        }
+    }
+
+    turnBorneLoss(gameMsg) {
+        gameMsg.channel.send(`"Gods," you suddenly hear the master say, "How slow can you get? I'm done with you." \n` +
+        `Everything suddenly goes black...`);
+        this.quitProcess(gameMsg);
+    }
+
+    healthBorneLoss(gameMsg) {
+        gameMsg.channel.send(`Your wounds overwhelm you and you collapase. Everything goes black...`);
+        this.quitProcess(gameMsg);
+    }
+
+    quitProcess(gameMsg) {
+        gameMsg.channel.send('Exiting game...');
+        gameBoolean.setGameBoolean(false);
+    }
+
+    reportGameState() {
+        return gameBoolean.getGameBoolean();
+    }
+
+    setGameState(state) {
+        gameBoolean.setGameBoolean(state);
+    }
+
 }
 
 module.exports = Game;

@@ -1,8 +1,8 @@
 const index = require('/Users/soondos/Desktop/independent/TrialBot/index.js');
 const Game = require('/Users/soondos/Desktop/independent/TrialBot/commands/game.js');
 const Room = require('/Users/soondos/Desktop/independent/TrialBot/objects/room.js');
+
 const game = new Game();
-let gameBoolean = 0; // default = we are not in game. 
 
 class Start {
     constructor(client, input, args, connection) {
@@ -12,13 +12,11 @@ class Start {
         this.connection = connection;
     }
 
+
 // module.exports = { // these are functions that will not be called within this file, but called by another.
 
-    getGameBoolean() {
-        return gameBoolean;
-    }
 
-    startGame(client, input, args, connection) {
+    startGame(client, input, connection) {
         // let msg = await input.channel.send("Generating thing...");
         // let target = input.mentions.users.first() || input.author;
          connection.query(`SELECT * FROM user_info WHERE userID = '${input.author.id}'`, (err, rows) => {
@@ -37,11 +35,11 @@ class Start {
              }
             // connection.query(sql, console.log);
              input.channel.send(`Okeydokey done! Starting!`);
-             if(gameBoolean === 0) {
-                gameBoolean = 1;
+             if(game.reportGameState() == false) {
+                game.setGameState(true);
             } 
             else {
-                gameBoolean = 0;
+                game.setGameState(false);
             }
             input.channel.send(game.getCurrentRoom().getLongDescription());
             game.inGame(client, input, connection);
@@ -73,6 +71,14 @@ class Start {
         "help lets you see your commands. \n" +
         "quit lets you quit the game. \n";
     }
+
+    startGameState() {
+        return game.reportGameState();
+    }
+
+    // startGameToggle(bool) {
+    //     game.setGameState(bool);
+    // }
 
 }
 

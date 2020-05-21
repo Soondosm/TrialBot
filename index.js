@@ -52,15 +52,14 @@ connection.connect(err => { // run when database is first connected
 client.on('message', async input=>{ // listening
   //  if(input.author.client) return; // if message entered is by bot itself, stop
     if(input.channel.type === 'dm') return; // if message entered is a dm, stop
-    if(start.getGameBoolean() === 1) return; // if we're already in game, DON'T use these commands.
-
     let item = questions[Math.floor(Math.random() * questionListLength)];
     const testFilter = response => { // you iterate through the answers to find what you want.
         return item.answers.some(answer => answer.toLowerCase() === response.content.toLowerCase());
     };
 
     let args = input.content.substring(config.Prefix.length).split(' '); // allows us to implement prefix at beginning
-    
+    if(start.startGameState() == true) return; // if we're already in game, DON'T use these commands.
+
     switch(args[0]) { // 0 = first word, 1 = second, etc
         case 'help':
             input.channel.sendMessage('NO HELP FOR U. SUFFER');
@@ -84,9 +83,8 @@ client.on('message', async input=>{ // listening
 
         case 'start':
             input.channel.send(`Welcome!`);
-            start.startGame(client, input, args, connection); // runs "start" program in start.js
+            start.startGame(client, input, connection); // runs "start" program in start.js
             break;
-            
     }
 });
 
