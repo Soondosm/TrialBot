@@ -1,3 +1,4 @@
+const Discord = require('discord.js');
 const Room = require('/Users/soondos/Desktop/independent/TrialBot/objects/room.js');
 const Item = require('/Users/soondos/Desktop/independent/TrialBot//objects/item.js');
 
@@ -9,7 +10,8 @@ class Backpack {
     // pick up an item from the room and add it to backpack.
     backpackAdd(item, room) {
         this.bag.push(item);
-        room.removeItem(item);
+        if(room != null)
+            room.removeItem(item);
         console.log("item added.");
     }
 
@@ -26,7 +28,15 @@ class Backpack {
         this.bag.splice(index, 1); // removes the 1 item at index (location, number of items removed)
         console.log("item deleted from inventory.")
     }
-    // returns true or false depending on whether or not desired item is in backpack.
+
+    // deletes the item (spellbook growth, fire, or rest) from backpack upon use. returns a string to report to player.
+    bookPoof(item) {
+        this.backpackDelete(item);
+        return `The ` + item.getName() + ` disappears in a puff of smoke.`;
+
+    }
+
+    // returns desired item object if it is in backpack.
     isInBackpack(item) {
         let resultString = false;
         let resultIndex = null;

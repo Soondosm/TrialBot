@@ -5,8 +5,9 @@ const Game = require('/Users/soondos/Desktop/independent/TrialBot/commands/game.
 const Creature = require('/Users/soondos/Desktop/independent/TrialBot/objects/creature.js');
 
 let dogSpeak = new Array(); // array of doge text
-let dogRooms = new Map(); // map of what doge says in each room
+let dogRooms = new Map(); // map of what doge says in each room (string room name, string dogspeak text)
 let variable = Math.floor(Math.random() * dogSpeak.length);
+const friendlyHealth = 12; // health doge is set to when it gets bone BEFORE its freed
 
 class HellHound extends Creature {
     super(cName, cDescription, damage, health) {
@@ -14,6 +15,7 @@ class HellHound extends Creature {
         this.cDescription = cDescription;
         this.damage = damage;
         this.health = health;
+        this.friendlyHealth = friendlyHealth;
     }
     // constructor(cName, cDescription, damage, health) {
     // }
@@ -41,6 +43,10 @@ class HellHound extends Creature {
         dogRooms.set("cluttered room", "The hellhound starts chewing on some paper. Hope that's not important.");
         dogRooms.set("eerie room", "The hellhound runs over to where you found the skeletal arm, and, tail wagging, starts pawing.");
         dogRooms.set("warp room", "The hellhound shifts uncomfortably.");
+    }
+
+    getFriendlyHealth() {
+        return this.friendlyHealth;
     }
 }
 

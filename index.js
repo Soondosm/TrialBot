@@ -3,9 +3,9 @@ const Discord = require('discord.js');
 const config = require('./configure.json'); // configuration file holding token etc.
 const questions = require('./questions.json'); //
 const Start = require('./commands/start.js');
-let start = new Start();
-// const Game = require('./commands/game.js');
-// const game = new Game();
+const start = new Start();
+const Game = require('./commands/game.js');
+const game = new Game();
 const mysql = require('mysql');
 
 // create a new Discord client
@@ -19,6 +19,8 @@ user: "root",
 password: config.DatabasePassword,
 database: "wizard_trials"
 });
+
+let numbers = 0;
 
 //                  -------------------------------------FUNCTIONS-----------------------------------------------
 
@@ -58,11 +60,12 @@ client.on('message', async input=>{ // listening
     };
 
     let args = input.content.substring(config.Prefix.length).split(' '); // allows us to implement prefix at beginning
-    if(start.startGameState() == true) return; // if we're already in game, DON'T use these commands.
 
+    if(start.startGameState(game) == true) return; // if we're already in game, DON'T use these commands.
+    
     switch(args[0]) { // 0 = first word, 1 = second, etc
         case 'help':
-            input.channel.sendMessage('NO HELP FOR U. SUFFER');
+            input.channel.sendMessage('`?start` starts the game. \n `?server` tells you the name of this server. \n `?question` asks a random question. ');
             break;
 
         case 'question':
@@ -83,7 +86,7 @@ client.on('message', async input=>{ // listening
 
         case 'start':
             input.channel.send(`Welcome!`);
-            start.startGame(client, input, connection); // runs "start" program in start.js
+            start.startGame(client, input, connection, game); // runs "start" program in start.js
             break;
     }
 });

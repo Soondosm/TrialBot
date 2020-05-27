@@ -119,7 +119,9 @@ class Room {
 
     // does the room we're currently in have a creature in it? returns integer of size.
     hasCreature() {
-       return this.creatures.size;
+        if(this.creatures.size == 0) {
+            return false;
+        } else return true;
     }
 
     /**
@@ -132,6 +134,16 @@ class Room {
         let keys = Array.from(this.creatures.keys());
         returnString += keys.join(", ") + " here.";
         return returnString
+    }
+
+    /**
+     * returns the creature in this room as a string, if any.
+     * @return string name of creature
+     */
+    getCreature() {
+        let keys = Array.from(this.creatures.keys());
+        let string = keys.join("");
+        return string
     }
 
      /**

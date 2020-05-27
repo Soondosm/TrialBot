@@ -22,7 +22,7 @@ class Creature {
         return this.damage;
     }
 
-    getCreatureHealth() {
+    getCHealth() {
         return this.health;
     }
 

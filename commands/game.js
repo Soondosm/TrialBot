@@ -7,6 +7,7 @@ const Creature = require('/Users/soondos/Desktop/independent/TrialBot/objects/cr
 
 const InGame = require('/Users/soondos/Desktop/independent/TrialBot/objects/ingame.js');
 let gameBoolean = new InGame(); // default = we are not in game. 
+let gameHasQuit = false; // to avoid duplicate Game objects, we need to know if we've "quit" once before already.
 
 let hellhound = new Hellhound();
 let backpack = new Backpack();
@@ -57,17 +58,11 @@ class Game {
                     let command = gameMsg.content.substring(config.Prefix.length).split(' '); // allows us to implement prefix at beginning
                     currentTurn++;
 
-                    switch(currentTurn, HP) {
-                        case currentTurn > turnLimit:
-                            this.turnBorneLoss(gameMsg);
-                            break;
-                        case HP <= 0:
-                            this.healthBorneLoss(gameMsg);
-                            break;
+                    if(currentTurn > turnLimit) {
+                        this.turnBorneLoss(gameMsg);
+                    } else if (HP <= 0) {
+                        this.healthBorneLoss(gameMsg);
                     }
-                    // if(currentTurn > turnLimit) {
-                        
-                    // }
 
                     switch(command[0]) {
                         case 'display':
@@ -84,7 +79,11 @@ class Game {
                             break;
 
                         case 'use':
-                            gameMsg.channel.send('use wat');
+                            if(!command[1]) {
+                                gameMsg.channel.send('use wat');
+                            } else {
+                                this.useItem(command[1], gameMsg);
+                            }
                             break;
                 
                         case 'take':
@@ -112,7 +111,11 @@ class Game {
                             break;
 
                         case 'attack':
-                            gameMsg.channel.send('attack wat');
+                            if(!command[1]) {
+                                gameMsg.channel.send('You punch the air. nice.');
+                            } else {
+                                gameMsg.channel.send('lmao she aint implemented yet');
+                            }
                             break;
 
                         case 'warp':
@@ -209,7 +212,7 @@ class Game {
         boss_key = new Item("boss_key", "A glittering key sits on the floor, underneath the fairy.", 4, 0);
         bone = new Item("charred_bone", "This looks like a sizeable bone--perfect for a dog to chew on.", 2, 0);
         normal_bone = new Item("bone", "This is a pretty decent bone for a dog to chew on.", 2, 0);
-        knife = new Item("knife", "A shiny iron knife. A gargoyle was trying to enjoy" +
+        knife = new Item("knife", "A shiny iron knife. A gargoyle was trying to enjoy " +
         "its stone omelette with this.", 2, 2);
         book_rest = new Item("spellbook_rest", "A mage book that, when cast, puts enemies to sleep.", 10, 0);
         book_fire = new Item("spellbook_fire", "A mage book that, when cast, flings a small fireball.", 10, 3);
@@ -266,7 +269,7 @@ class Game {
         let nextRoom = currentRoom.getExit(direction);
         if(!currentRoom.hasExit(direction)) {
             gameMsg.channel.send(`There's no door here.`);
-        } else if(nextRoom == boss_room && (backpack.isInBackpack(boss_key) == false)) {
+        } else if(nextRoom == boss_room && (backpack.isInBackpack(boss_key) == null)) {
             gameMsg.channel.send('This door is locked.');
         } else {
             lastRoom = currentRoom; // saves the previous room we were at to come back to later.
@@ -288,6 +291,158 @@ class Game {
         cluttered_room.removeItem(hurt_fairy.getName());
         cluttered_room.setRoomDescription("This looks like your master's messy study space...but the little injured fairy" + "\n" +
         "here is laying on the floor, quiet. He may have died from his wounds...");
+    }
+
+    useItem(item, gameMsg) {
+        let bagString = backpack.isInBackpack(item);
+        if(bagString == null && currentRoom != warp_room ) {
+            gameMsg.channel.send(`You don't have that in your inventory.`);
+
+        } else if(bagString == bone || bagString == boss_key || bagString == hurt_fairy) {   // you can't use these items for anything. 
+            gameMsg.channel.send(`You aren't sure how to use this.`);
+
+         // the if statement for the mage book of growth. can cause the sapling to grow into a massive plant that lets you reach firaga.
+        } else if((bagString == book_growth) && (currentRoom == earthy_room)) {
+            switch(plantDestroyed) {
+                case true:
+                    gameMsg.channel.send(`There's nothing to grow here anymore, you plant-burning monster.`);
+                    break;
+
+                case false:
+                    gameMsg.channel.send(backpack.bookPoof(bagString)); // book of growth poofs bc we used it in earthy room.
+                    gameMsg.channel.send(`The sapling fills with light, and grows and grows all the way up to the room's ceiling. 
+You climb the now massive plant, and find yourself within reach of the book you had no hope of grabbing before.`);
+                    backpack.backpackAdd(book_firaga, currentRoom);
+                    gameMsg.channel.send(`You have obtained a ` + book_firaga.getName() + `!`);
+                    currentRoom.setRoomDescription(`This quaint room has a now massive plant that takes up a good portion of the room. 
+There's a little ledge close to the ceiling, but there's nothing hiding up there anymore.`);
+                    break;
+            } 
+            
+        } else if((bagString == book_fire || bagString == book_firaga) && (currentRoom == earthy_room)) {
+                switch(plantDestroyed) {
+                    case true:
+                        gameMsg.channel.send(`You've already destroyed everything in here. What more do you want?`);
+                        break;
+
+                    case false:
+                        plantDestroyed = true;
+                        if(bagString == book_fire) {
+                            gameMsg.channel.send(backpack.bookPoof(bagString));
+                        }
+                        gameMsg.channel.send(`You set fire to the plant. The room is nothing but walls of flame for several minutes. 
+By the end of the carnage, the room is reduced to ash...`);
+                        earthy_room.setRoomDescription(`This room is all burnt up thanks to your fiery spell...`);
+                        break;
+                }  
+                            // using a book in quiet room on gargoyle
+        } else if(currentRoom == quiet_room && currentRoom.getCreature() == gargoyle.getName()) { 
+            switch(bagString){
+                case book_rest:
+                    gameMsg.channel.send(backpack.bookPoof(bagString));
+                    currentRoom.removeCreature(gargoyle);
+                    gameMsg.channel.send(`The gargoyle closes its eyes...and then crumbles to dust, and the iron knife it was holding clatters 
+on the floor. It is yours to take now, if you so wish...`);
+                    currentRoom.setRoomDescription(`This quiet room now has little more than a pile of dust on the floor, 
+all thanks to your clever work.`);
+                    break;
+                case book_fire || book_firaga:
+                    if(bagString == book_fire) {
+                        gameMsg.channel.send(backpack.bookPoof(bagString));
+                    }
+                    const damageTaken = bagString.getPower()/2;
+                    gargoyle.setCHealth(gargoyle.getCHealth() - damageTaken)
+                    gameMsg.channel.send(`The gargoyle takes` + damageTaken + `points of damage! 
+The gargoyle stirs. It roars...and charges at you!`);
+                    break;
+                    // implement fighting later...
+            }
+        } else if(currentRoom == dim_room && currentRoom.getCreature() == bottled_fairy.getName()) {
+             switch(bagString) {
+                 case book_fire || book_firaga:
+                     if(bagString == book_fire) {
+                         gameMsg.channel.send(backpack.bookPoof(bagString));
+                     }
+                     gameMsg.channel.send(`The fairy's eyes gleam with rage. She raises an arm and the blast of fire riderects...straight at you. 
+You fly back and hit the wall. You are blinded by the light. You can feel your body burning up...`);
+                    currentRoom.removeCreature(bottled_fairy.getName());
+                    HP = 0;
+                    break;
+                
+                case book_rest:
+                    gameMsg.channel.send(backpack.bookPoof(bagString));
+                    gameMsg.channel.send(`The fairy falls asleep, tears still on her face...Did you do the right thing? 
+ At least she's quiet now...`);
+                    bottled_fairy.setCDescription("The fairy's asleep...");
+                    break;
+             }
+        } else if((bagString == book_firaga || bagString == book_fire) && currentRoom == scratched_room && dogFriend == false) {
+                if(dogFree == false)  dogFree = true;
+                if(bagString == book_fire) gameMsg.channel.send(backpack.bookPoof(bagString));
+                hellhound.setCHealth(hellhound.getCHealth() - bagString.getPower());
+                gameMsg.channel.send(`The hellhound yips in pain! It takes ` + bagString.getPower() + ` points of damage from your attack. 
+The rope burns away, freeing it...and it attacks!`);
+                hellhound.setCDescription(`Because you've burnt it, the hellhound is furious with you! And it's no longer restrained!`);
+                // FIGHT
+            
+        } else if(bagString == knife && currentRoom == scratched_room) {
+            switch(hellhound.getCHealth()){
+                case hellhound.getFriendlyHealth(): // friendly health == 12, higher than default maximum. it becomes 12 when given bone.
+                    dogFriend = true;
+                    currentRoom.removeCreature(hellhound.getName());
+                    gameMsg.channel.send(`The hellhound does a skip and a spin. It seems you've made him 
+pretty happy! He seems to want to follow you...`);
+                    currentRoom.setRoomDescription("This room has nothing but a loose length of rope in it, now.");
+                    break;
+
+                default:
+                    HP = HP - hellhound.getCreatureDmg();
+                    dogFree = true;
+                    gameMsg.channel.send(`You cut the rope binding the hellhound. It breaks free! It does not seem happy. 
+The creature bites you! Ouch! You take ` + hellhound.getCreatureDmg() + ` points of damage.`);
+                     hellhound.setCDescription("This hellhound is angry and now that it's free, it charges at you!");
+                     // FIGHT HAPPENS HERE;;;
+                     break;
+            }
+                
+        } else if(currentRoom == eerie_room && bagString == book_firaga || bagString == book_fire && 
+            currentRoom.getCreature() == skeleton.getCreatureName()) {
+            if(bagString == book_fire) gameMsg.channel.send(backpack.bookPoof(bagString));
+            currentRoom.removeCreature(skeleton.getCreatureName());
+            gameMsg.channel.send(`The skeletal arm burns quite nicely and crumbles to the ground. 
+Now there's a really nice charred_bone on the ground...`);
+            currentRoom.createItem(bone); // charred bone obtained!
+
+        } else if(currentRoom == warp_room) {
+            switch(warpDestroyed) {
+                case false: // runes in warp room are NOT destroyed
+                    switch(bagString) {
+                        case book_fire || book_firaga:
+                            gameMsg.channel.send(`You blast fire all over the place. The runes are destroyed...`);
+                            warpDestroyed = true;
+                            break;
+
+                        case book_growth:
+                            gameMsg.channel.send(`Flowers bloom around you. what a pretty spell!`);
+                            break;
+
+                        case book_rest:
+                            gameMsg.channel.send(`The world goes dark for a moment...oops. Since there was no one in the room 
+to cast this spell on but yourself, it looks like you were the one who fell asleep...`);
+                             break;
+                    }
+
+                case true: //runes in warp room ARE destroyed so nothing works
+                    gameMsg.channel.send(`Because you've destroyed the runes, there is no magic here anymore.`);
+                    break;
+            }
+
+        } else if((bagString == book_growth && currentRoom != earthy_room) || 
+        (bagString == book_rest && currentRoom != dim_room, quiet_room, fight_room) ||
+        ((bagString == book_fire || book_firaga) && currentRoom == scratched_room && dogFriend == true ) || 
+        ((bagString == book_fire || book_firaga) && currentRoom != earthy_room && currentRoom.hasCreature() == false)) {
+            gameMsg.channel.send(`Nothing happened...`);
+        }
 
     }
 
@@ -297,6 +452,10 @@ class Game {
             gameMsg.channel.send(`That item isn't in this room.`);
         }else if(chosenItem.getWeight() + backpack.getWeight() > weightCapacity) { // if new item weight + backpack weight > weight capacity (14)
             gameMsg.channel.send(`You're carrying too much! Drop something first.`);
+        }else if(currentRoom == quiet_room && chosenItem == knife && currentRoom.getCreature() == gargoyle.getName()) {
+            gameMsg.channel.send(`"Just as you begin to pry the knife from the gargoyle's hand... it moves! Turns out, it's alive. 
+And it's not happy you tried to disturb it from its meal. It attacks!`);
+            // FIGHTING HAPPENS HERE GO GO
         } else {
             backpack.backpackAdd(chosenItem, currentRoom); 
             gameMsg.channel.send(`You took the ` + item + `.`);
@@ -340,7 +499,11 @@ class Game {
 
     quitProcess(gameMsg) {
         gameMsg.channel.send('Exiting game...');
+        currentTurn = 0; // reset turn count?
         gameBoolean.setGameBoolean(false);
+        gameHasQuit = true;
+      //  this.client.destroy();
+
     }
 
     reportGameState() {
@@ -349,6 +512,15 @@ class Game {
 
     setGameState(state) {
         gameBoolean.setGameBoolean(state);
+    }
+
+    /**
+     * In order to not keep running new inGame() functions every time start.js's script runs, we report the boolean of 
+     * whether or not the game has quit once already and therefore does not need to be "booted up" again.
+     * @return boolean whether or not game has already been exited once already
+     */
+    getGameInitHistory() {
+        return gameHasQuit
     }
 
 }

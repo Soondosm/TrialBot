@@ -1,8 +1,8 @@
 const index = require('/Users/soondos/Desktop/independent/TrialBot/index.js');
-const Game = require('/Users/soondos/Desktop/independent/TrialBot/commands/game.js');
+// const Game = require('/Users/soondos/Desktop/independent/TrialBot/commands/game.js');
 const Room = require('/Users/soondos/Desktop/independent/TrialBot/objects/room.js');
 
-const game = new Game();
+// const game = new Game();
 
 class Start {
     constructor(client, input, args, connection) {
@@ -10,13 +10,14 @@ class Start {
         this.input = input;
         this.args = args;
         this.connection = connection;
+     //   this.game = game;
     }
 
 
 // module.exports = { // these are functions that will not be called within this file, but called by another.
 
 
-    startGame(client, input, connection) {
+    startGame(client, input, connection, game) {
         // let msg = await input.channel.send("Generating thing...");
         // let target = input.mentions.users.first() || input.author;
          connection.query(`SELECT * FROM user_info WHERE userID = '${input.author.id}'`, (err, rows) => {
@@ -42,7 +43,9 @@ class Start {
                 game.setGameState(false);
             }
             input.channel.send(game.getCurrentRoom().getLongDescription());
-            game.inGame(client, input, connection);
+            if(game.getGameInitHistory() == false) { // if the instance of this bot has NEVER run the game method before, run it now.
+                game.inGame(client, input, connection); // otherwise, inGame() methods will run on top of each other!
+            }
          });
      }
 
@@ -72,7 +75,7 @@ class Start {
         "quit lets you quit the game. \n";
     }
 
-    startGameState() {
+    startGameState(game) {
         return game.reportGameState();
     }
 
