@@ -42,9 +42,13 @@ class Start {
             else {
                 game.setGameState(false);
             }
-            input.channel.send(game.getCurrentRoom().getLongDescription());
+            
             if(game.getGameInitHistory() == false) { // if the instance of this bot has NEVER run the game method before, run it now.
+                input.channel.send(game.getCurrentRoom().getLongDescription());
                 game.inGame(client, input, connection); // otherwise, inGame() methods will run on top of each other!
+            } else {
+                game.gameReset();
+                input.channel.send(game.getCurrentRoom().getLongDescription());
             }
          });
      }

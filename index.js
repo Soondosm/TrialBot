@@ -52,8 +52,9 @@ connection.connect(err => { // run when database is first connected
 });  */
 
 client.on('message', async input=>{ // listening
-  //  if(input.author.client) return; // if message entered is by bot itself, stop
+    if(input.author.bot) return; // if message entered is by bot itself, stop
     if(input.channel.type === 'dm') return; // if message entered is a dm, stop
+    if(input.content[0] != config.Prefix || (input.content[0] == config.Prefix && input.content[1] == ``)) return;
     let item = questions[Math.floor(Math.random() * questionListLength)];
     const testFilter = response => { // you iterate through the answers to find what you want.
         return item.answers.some(answer => answer.toLowerCase() === response.content.toLowerCase());

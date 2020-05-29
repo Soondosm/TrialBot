@@ -31,13 +31,12 @@ class Room {
     }
 
     getLongDescription() {
-        let returnString = "You are in " + this.name + ". \n" + this.description + "\n" + this.getExitString()
-        + "\n";
+        let returnString = "You are in " + this.name + ". \n" + this.description + "\n" + this.getExitString();
         if(this.hasItem() > 0) {
-           returnString += this.getItemString();
+           returnString += `\n` + this.getItemString();
         }
         if(this.hasCreature() > 0) {
-           returnString += this.getCreatureString();
+           returnString += `\n` + this.getCreatureString();
         }
         return returnString;
     } 
@@ -101,7 +100,7 @@ class Room {
      * @return none.
      */
     removeItem(item) {
-        this.items.delete(item.getName());
+        this.items.delete(item);
         console.log("item deleted???");
     }
 

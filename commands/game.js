@@ -19,11 +19,12 @@ earthy_room, dim_room, quiet_room, cluttered_room, warp_room, lastRoom; // rooms
 let hurt_fairy, dead_fairy, boss_key, bone, normal_bone, knife, book_rest,
  book_fire, book_firaga, book_growth; //items
 
-let bottled_fairy, gargoyle, master, skeleton, fighting_creature; // creatures
+let lone_fairy, gargoyle, master, skeleton, fighting_creature; // creatures
 
 let currentRoom = new Room("current room", "this is our current room.");
-let heldItems = new Array();
 let randomRooms = new Array();
+
+const validCommands = [`display`, `go`, `use`, `take`, `drop`, `give`, `inspect`, `attack`, `warp`, `help`]
 
 const weightCapacity = 14;
 const maxHealth = 20;
@@ -56,8 +57,8 @@ class Game {
                     if(gameBoolean.getGameBoolean() == false) return;
                     if(gameMsg.channel.type === 'dm') return;
                     let command = gameMsg.content.substring(config.Prefix.length).split(' '); // allows us to implement prefix at beginning
-                    currentTurn++;
-
+                    if(this.turnCheck(command[0]) == true) currentTurn++;
+                   
                     if(currentTurn > turnLimit) {
                         this.turnBorneLoss(gameMsg);
                     } else if (HP <= 0) {
@@ -235,8 +236,8 @@ class Game {
     createCreatures() {
         //creates creatures
         hellhound = new Hellhound("Hellhound", "It growls menacingly at you. It's held in place only by rope...", 4, 10);
-        bottled_fairy = new Creature("Bottled Fairy", "She's crying with her face buried in her hands. \n" +
-        "Her voice sounds like sad little bells...", 3, 5);
+        lone_fairy = new Creature("Lone Fairy", "She's crying with her face buried in her hands on the floor. \n" +
+        "Her voice sounds like sad little bells...what's she crying about? Has she lost something?", 3, 5);
         gargoyle = new Creature("Gargoyle", "The gargoyle statue thing is sitting in a teeny chair in front of a table, \n" +
         "holding a knife over what looks like a flat rock shaped to look like a sunny-side up egg. \n" +
         "It's completely frozen...is it even real? Can it move?", 6, 25);
@@ -248,7 +249,7 @@ class Game {
 
         //initializes placement of creatures.
         scratched_room.createCreature(hellhound);
-        dim_room.createCreature(bottled_fairy);
+        dim_room.createCreature(lone_fairy);
         quiet_room.createCreature(gargoyle);
         eerie_room.createCreature(skeleton);
         boss_room.createCreature(master);
@@ -336,7 +337,7 @@ By the end of the carnage, the room is reduced to ash...`);
                         break;
                 }  
                             // using a book in quiet room on gargoyle
-        } else if(currentRoom == quiet_room && currentRoom.getCreature() == gargoyle.getName()) { 
+        } else if(currentRoom == quiet_room && currentRoom.getCreature() == gargoyle.getCreatureName()) { 
             switch(bagString){
                 case book_rest:
                     gameMsg.channel.send(backpack.bookPoof(bagString));
@@ -357,7 +358,7 @@ The gargoyle stirs. It roars...and charges at you!`);
                     break;
                     // implement fighting later...
             }
-        } else if(currentRoom == dim_room && currentRoom.getCreature() == bottled_fairy.getName()) {
+        } else if(currentRoom == dim_room && currentRoom.getCreature() == lone_fairy.getCreatureName()) {
              switch(bagString) {
                  case book_fire || book_firaga:
                      if(bagString == book_fire) {
@@ -365,7 +366,7 @@ The gargoyle stirs. It roars...and charges at you!`);
                      }
                      gameMsg.channel.send(`The fairy's eyes gleam with rage. She raises an arm and the blast of fire riderects...straight at you. 
 You fly back and hit the wall. You are blinded by the light. You can feel your body burning up...`);
-                    currentRoom.removeCreature(bottled_fairy.getName());
+                    currentRoom.removeCreature(lone_fairy.getCreatureName());
                     HP = 0;
                     break;
                 
@@ -373,7 +374,7 @@ You fly back and hit the wall. You are blinded by the light. You can feel your b
                     gameMsg.channel.send(backpack.bookPoof(bagString));
                     gameMsg.channel.send(`The fairy falls asleep, tears still on her face...Did you do the right thing? 
  At least she's quiet now...`);
-                    bottled_fairy.setCDescription("The fairy's asleep...");
+                    lone_fairy.setCDescription("The fairy's asleep...");
                     break;
              }
         } else if((bagString == book_firaga || bagString == book_fire) && currentRoom == scratched_room && dogFriend == false) {
@@ -416,21 +417,25 @@ Now there's a really nice charred_bone on the ground...`);
         } else if(currentRoom == warp_room) {
             switch(warpDestroyed) {
                 case false: // runes in warp room are NOT destroyed
-                    switch(bagString) {
-                        case book_fire || book_firaga:
+                    switch(item) {
+                        case book_fire.getName() || book_firaga.getName():
                             gameMsg.channel.send(`You blast fire all over the place. The runes are destroyed...`);
                             warpDestroyed = true;
                             break;
 
-                        case book_growth:
+                        case book_growth.getName():
                             gameMsg.channel.send(`Flowers bloom around you. what a pretty spell!`);
                             break;
 
-                        case book_rest:
+                        case book_rest.getName():
                             gameMsg.channel.send(`The world goes dark for a moment...oops. Since there was no one in the room 
 to cast this spell on but yourself, it looks like you were the one who fell asleep...`);
                              break;
+
+                        default:
+                            gameMsg.channel.send(`You aren't sure what that spell is, let alone how to try casting it without hurting yourself.`)
                     }
+                    break;
 
                 case true: //runes in warp room ARE destroyed so nothing works
                     gameMsg.channel.send(`Because you've destroyed the runes, there is no magic here anymore.`);
@@ -452,8 +457,8 @@ to cast this spell on but yourself, it looks like you were the one who fell asle
             gameMsg.channel.send(`That item isn't in this room.`);
         }else if(chosenItem.getWeight() + backpack.getWeight() > weightCapacity) { // if new item weight + backpack weight > weight capacity (14)
             gameMsg.channel.send(`You're carrying too much! Drop something first.`);
-        }else if(currentRoom == quiet_room && chosenItem == knife && currentRoom.getCreature() == gargoyle.getName()) {
-            gameMsg.channel.send(`"Just as you begin to pry the knife from the gargoyle's hand... it moves! Turns out, it's alive. 
+        }else if(currentRoom == quiet_room && chosenItem == knife && currentRoom.getCreature() == gargoyle.getCreatureName()) {
+            gameMsg.channel.send(`Just as you begin to pry the knife from the gargoyle's hand... it moves! Turns out, it's alive. 
 And it's not happy you tried to disturb it from its meal. It attacks!`);
             // FIGHTING HAPPENS HERE GO GO
         } else {
@@ -476,6 +481,10 @@ And it's not happy you tried to disturb it from its meal. It attacks!`);
         }
     }
 
+    giveItem(gameMsg, item, recipient) {
+
+    }
+
     printDisplay(gameMsg) {
         gameMsg.channel.send(`You are currently carrying ` + backpack.getBagList());
         gameMsg.channel.send(`These items together weigh ` + backpack.getWeight() + ` pounds. You can carry up to ` + weightCapacity + `.`);
@@ -484,6 +493,14 @@ And it's not happy you tried to disturb it from its meal. It attacks!`);
         if(dogFriend == true) {
             gameMsg.channel.send(`Your new hellhound friend is following you!`);
         }
+    }
+
+    turnCheck(command) {
+        let isValid = false;
+        for(let i = 0; i < validCommands.length; i++) {
+            if(command == validCommands[i]) isValid = true;
+        }
+        return isValid;
     }
 
     turnBorneLoss(gameMsg) {
@@ -499,7 +516,6 @@ And it's not happy you tried to disturb it from its meal. It attacks!`);
 
     quitProcess(gameMsg) {
         gameMsg.channel.send('Exiting game...');
-        currentTurn = 0; // reset turn count?
         gameBoolean.setGameBoolean(false);
         gameHasQuit = true;
       //  this.client.destroy();
@@ -521,6 +537,23 @@ And it's not happy you tried to disturb it from its meal. It attacks!`);
      */
     getGameInitHistory() {
         return gameHasQuit
+    }
+
+    /**
+     * resets the game's stuff so that if you quit and come back or win and wanna start anew, ur not where we left off.
+     */
+    gameReset() {
+        currentTurn = 0; // reset turn count?
+        this.createRooms();
+        currentRoom = start_room;
+        console.log(currentRoom.getRoomName());
+        this.createItems();
+        this.createCreatures();
+        HP = maxHealth;
+        backpack = new Backpack();
+        dogFriend, fairyFriend, warpDestroyed, plantDestroyed = false;
+
+
     }
 
 }
