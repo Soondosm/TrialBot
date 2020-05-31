@@ -16,7 +16,7 @@ let backpack = new Backpack();
 let start_room, boss_room, scratched_room, musty_room, eerie_room, fight_room,
 earthy_room, dim_room, quiet_room, cluttered_room, warp_room, lastRoom; // rooms
 
-let hurt_fairy, dead_fairy, boss_key, bone, normal_bone, knife, book_rest,
+let hurt_fairy, dead_fairy, boss_key, burned_bone, normal_bone, knife, book_rest,
  book_fire, book_firaga, book_growth; //items
 
 let lone_fairy, gargoyle, master, skeleton, fighting_creature; // creatures
@@ -31,10 +31,8 @@ const maxHealth = 20;
 let HP = 20;
 const turnLimit = 90;
 let currentTurn = 0;
-let dogFriend = false;
-let fairyFriend = false;
-let warpDestroyed = false;
-let plantDestroyed = false;
+let dogCompanion, dogFree, fairyFriend, warpDestroyed, plantDestroyed;
+dogCompanion = dogFree = fairyFriend = warpDestroyed = plantDestroyed = false;
 
 class Game {
     
@@ -104,12 +102,19 @@ class Game {
                             break;
 
                         case 'give':
-                            if(!command[1]){
+                            let target = command[2];
+                            if(command[3]) target += " " + command[3];
+                            if(!command[1]) {
                                 gameMsg.channel.send('Give what?');
+                            }else if(backpack.isInBackpack(command[1]) == null) {
+                                gameMsg.channel.send(`You don't have that in your bag.`);
                             } else if(!command[2]) {
-                                gameMsg.channel.send(`Give ` + command[1] + ` to who?`);
+                                gameMsg.channel.send(`Give ` + command[1] + ` to who?`); 
+                            } else if(currentRoom.getCreature(target) == null) {
+                                console.log("test" + currentRoom.getCreature(target));
+                                gameMsg.channel.send(`There is no ` + target + ` in this room.`);
                             } else {
-                                this.giveItem(command[1], command[2], gameMsg);
+                                this.giveItem(command[1], target, gameMsg);
                             }
                             
                             break;
@@ -228,7 +233,7 @@ class Game {
         "It doesn't look like he can move very far.", 1, 0);
         dead_fairy = new Item("dead_fairy", "The fairy's dead...", 1, 0);
         boss_key = new Item("boss_key", "A glittering key sits on the floor, underneath the fairy.", 4, 0);
-        bone = new Item("charred_bone", "This looks like a sizeable bone--perfect for a dog to chew on.", 2, 0);
+        burned_bone = new Item("charred_bone", "This looks like a sizeable bone--perfect for a dog to chew on.", 2, 0);
         normal_bone = new Item("bone", "This is a pretty decent bone for a dog to chew on.", 2, 0);
         knife = new Item("knife", "A shiny iron knife. A gargoyle was trying to enjoy " +
         "its stone omelette with this.", 2, 2);
@@ -316,7 +321,7 @@ class Game {
         if(bagString == null && currentRoom != warp_room ) {
             gameMsg.channel.send(`You don't have that in your inventory.`);
 
-        } else if(bagString == bone || bagString == boss_key || bagString == hurt_fairy) {   // you can't use these items for anything. 
+        } else if(bagString == burned_bone || bagString == boss_key || bagString == hurt_fairy) {   // you can't use these items for anything. 
             gameMsg.channel.send(`You aren't sure how to use this.`);
 
          // the if statement for the mage book of growth. can cause the sapling to grow into a massive plant that lets you reach firaga.
@@ -394,7 +399,7 @@ You fly back and hit the wall. You are blinded by the light. You can feel your b
                     lone_fairy.setCDescription("The fairy's asleep...");
                     break;
              }
-        } else if((bagString == book_firaga || bagString == book_fire) && currentRoom == scratched_room && dogFriend == false) {
+        } else if((bagString == book_firaga || bagString == book_fire) && currentRoom == scratched_room && dogCompanion == false) {
                 if(dogFree == false)  dogFree = true;
                 if(bagString == book_fire) gameMsg.channel.send(backpack.bookPoof(bagString));
                 hellhound.setCHealth(hellhound.getCHealth() - bagString.getPower());
@@ -406,7 +411,7 @@ The rope burns away, freeing it...and it attacks!`);
         } else if(bagString == knife && currentRoom == scratched_room) {
             switch(hellhound.getCHealth()){
                 case hellhound.getFriendlyHealth(): // friendly health == 12, higher than default maximum. it becomes 12 when given bone.
-                    dogFriend = true;
+                    dogCompanion = true;
                     currentRoom.removeCreature(hellhound.getName());
                     gameMsg.channel.send(`The hellhound does a skip and a spin. It seems you've made him 
 pretty happy! He seems to want to follow you...`);
@@ -429,7 +434,7 @@ The creature bites you! Ouch! You take ` + hellhound.getCreatureDmg() + ` points
             currentRoom.removeCreature(skeleton.getCreatureName());
             gameMsg.channel.send(`The skeletal arm burns quite nicely and crumbles to the ground. 
 Now there's a really nice charred_bone on the ground...`);
-            currentRoom.createItem(bone); // charred bone obtained!
+            currentRoom.createItem(burned_bone); // charred bone obtained!
 
         } else if(currentRoom == warp_room) {
             switch(warpDestroyed) {
@@ -461,7 +466,7 @@ to cast this spell on but yourself, it looks like you were the one who fell asle
 
         } else if((bagString == book_growth && currentRoom != earthy_room) || 
         (bagString == book_rest && currentRoom != dim_room, quiet_room, fight_room) ||
-        ((bagString == book_fire || book_firaga) && currentRoom == scratched_room && dogFriend == true ) || 
+        ((bagString == book_fire || book_firaga) && currentRoom == scratched_room && dogCompanion == true ) || 
         ((bagString == book_fire || book_firaga) && currentRoom != earthy_room && currentRoom.hasCreature() == false)) {
             gameMsg.channel.send(`Nothing happened...`);
         }
@@ -499,13 +504,68 @@ And it's not happy you tried to disturb it from its meal. It attacks!`);
     }
 
     giveItem(item, recipient, gameMsg) {
-        let wantedItem = backpack.isInBackpack(item);
-        let wantedCreature = currentRoom.getCreature(recipient);
+        let wantedItem = backpack.isInBackpack(item); // gets item object
+        let wantedCreature = currentRoom.getCreature(recipient); // gets creature object
+        console.log(dogFree);
+        switch(wantedCreature) {
+            case hellhound:
+                switch(wantedItem) {
+                    case burned_bone || normal_bone:
+                        if(dogFree == false) {
+                            hellhound.setCHealth(hellhound.getFriendlyHealth());
+                            backpack.backpackDelete(wantedItem);
+                            gameMsg.channel.send(`The hellhound blinks down at the bone you place before it. Its tail wags... 
+Its barking has stopped entirely. It gnaws contentedly on the bone--it's pretty happy now. It even looks kinda cute...`);
+                            hellhound.setCDescription(`Thanks to the bone you've given it, it seems super happy. 
+It's gnawing merrily on the bone. It doesn't even notice you if you walk over.`);     
+                        } else {
+                            gameMsg.channel.send(`All it appears focused on is keeping you away. It doesn't want to lower its guard at all...`);
+                        }
+                        break;
+
+                    default:
+                        gameMsg.channel.send(`It doesn't seem interested in that.`);
+                        break;
+                }
+                break;
+            case lone_fairy:
+                switch(wantedItem) {
+                    case hurt_fairy:
+                        fairyFriend = true;
+                        HP = maxHealth; // 20
+                        currentRoom.removeCreature(recipient);
+                        backpack.backpackDelete(item);
+                        gameMsg.channel.send(`You show the hurt fairy to his mother. The two fairies embrace, both crying little bells of joy. 
+The mother envelops you in golden magic...` + "\n" +
+                        `Your health has been completely restored!` + "\n" +
+                        `The united pair disappear in a shower of fairy sparkles.`);    
+                        break;
+                    
+                    case dead_fairy:
+                        gameMsg.channel.send(`The fairy stares at the little corpse you offer her. She slowly emerges from the bottle. She is not happy. 
+Without warning, she raises her arm and lights the entire room in an explosion. You fly back, entire body burning up...`);
+                        HP = 0;
+                        break;
+            
+                    default:
+                        HP =- lone_fairy.getCreatureDmg();
+                        currentRoom.removeCreature(recipient);
+                        gameMsg.channel.send(`The fairy doesn't seem to like what you're holding out to it. Her sadness turns to anger, and she 
+leaps into the air with a flap of her wings. A shower of burning sparks burst from her raised palms. Ouch! 
+\n You take ` + lone_fairy.getCreatureDmg() + ` damage. She then vanishes in a flash of angry glitter...` );
+                        break; 
+                }
+                    break;
+
+                default:
+                    gameMsg.channel.send(`It doesn't seem to give you much of a reaction to what you extend towards it.`);
+                    break;
+            }
+           
     }
 
     inspectThing(thing, gameMsg){
         let this_room = "room";
-        console.log("input command:" + thing + ", " + this_room);
         let bagString = backpack.isInBackpack(thing); // string of item in backpack
         if(bagString != null) bagString = bagString.getName();
         
@@ -513,12 +573,9 @@ And it's not happy you tried to disturb it from its meal. It attacks!`);
         if(roomItemString != null) roomItemString = roomItemString.getName();
 
         let roomString = currentRoom.getRoomName(); // string of room itself, or just "room"
-        console.log("room test: " + roomString);
 
         let creatureString = currentRoom.getCreature(thing); // string of creature in room
         if(creatureString != null) creatureString = creatureString.getCreatureName();
-      
-        console.log("creature test:" + creatureString);
         switch(thing) {
             case bagString:
                 gameMsg.channel.send(backpack.getBagDescrip(backpack.isInBackpack(thing)));
@@ -551,7 +608,7 @@ And it's not happy you tried to disturb it from its meal. It attacks!`);
         gameMsg.channel.send(`These items together weigh ` + backpack.getWeight() + ` pounds. You can carry up to ` + weightCapacity + `.`);
         gameMsg.channel.send(`Your current health is ` + HP + `/` + maxHealth + `.`);
         gameMsg.channel.send(`You have currently taken ` + currentTurn + ` actions. Don't fool around too long...`);
-        if(dogFriend == true) {
+        if(dogCompanion == true) {
             gameMsg.channel.send(`Your new hellhound friend is following you!`);
         }
     }
@@ -612,7 +669,7 @@ And it's not happy you tried to disturb it from its meal. It attacks!`);
         this.createCreatures();
         HP = maxHealth;
         backpack = new Backpack();
-        dogFriend, fairyFriend, warpDestroyed, plantDestroyed = false;
+        dogCompanion, fairyFriend, warpDestroyed, plantDestroyed = false;
 
 
     }
