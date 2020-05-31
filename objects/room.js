@@ -139,10 +139,14 @@ class Room {
      * returns the creature in this room as a string, if any.
      * @return string name of creature
      */
-    getCreature() {
+    getCreatureName() {
         let keys = Array.from(this.creatures.keys());
         let string = keys.join("");
         return string
+    }
+
+    getCreature(creature) {
+        return this.creatures.get(creature)
     }
 
      /**

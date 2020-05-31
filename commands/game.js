@@ -104,11 +104,28 @@ class Game {
                             break;
 
                         case 'give':
-                            gameMsg.channel.send('give wat');
+                            if(!command[1]){
+                                gameMsg.channel.send('Give what?');
+                            } else if(!command[2]) {
+                                gameMsg.channel.send(`Give ` + command[1] + ` to who?`);
+                            } else {
+                                this.giveItem(command[1], command[2], gameMsg);
+                            }
+                            
                             break;
                 
                         case 'inspect':
-                            gameMsg.channel.send('inspect wat');
+                            if(!command[1]) {
+                                gameMsg.channel.send(`Inspect what?`);
+                            } else {
+                                let object;
+                                if(command[2]) {
+                                    object = command[1] + " " + command[2];
+                                } else { 
+                                    object = command[1];
+                                }
+                                this.inspectThing(object, gameMsg);
+                            }
                             break;
 
                         case 'attack':
@@ -337,7 +354,7 @@ By the end of the carnage, the room is reduced to ash...`);
                         break;
                 }  
                             // using a book in quiet room on gargoyle
-        } else if(currentRoom == quiet_room && currentRoom.getCreature() == gargoyle.getCreatureName()) { 
+        } else if(currentRoom == quiet_room && currentRoom.getCreatureName() == gargoyle.getCreatureName()) { 
             switch(bagString){
                 case book_rest:
                     gameMsg.channel.send(backpack.bookPoof(bagString));
@@ -358,7 +375,7 @@ The gargoyle stirs. It roars...and charges at you!`);
                     break;
                     // implement fighting later...
             }
-        } else if(currentRoom == dim_room && currentRoom.getCreature() == lone_fairy.getCreatureName()) {
+        } else if(currentRoom == dim_room && currentRoom.getCreatureName() == lone_fairy.getCreatureName()) {
              switch(bagString) {
                  case book_fire || book_firaga:
                      if(bagString == book_fire) {
@@ -407,7 +424,7 @@ The creature bites you! Ouch! You take ` + hellhound.getCreatureDmg() + ` points
             }
                 
         } else if(currentRoom == eerie_room && bagString == book_firaga || bagString == book_fire && 
-            currentRoom.getCreature() == skeleton.getCreatureName()) {
+            currentRoom.getCreatureName() == skeleton.getCreatureName()) {
             if(bagString == book_fire) gameMsg.channel.send(backpack.bookPoof(bagString));
             currentRoom.removeCreature(skeleton.getCreatureName());
             gameMsg.channel.send(`The skeletal arm burns quite nicely and crumbles to the ground. 
@@ -457,7 +474,7 @@ to cast this spell on but yourself, it looks like you were the one who fell asle
             gameMsg.channel.send(`That item isn't in this room.`);
         }else if(chosenItem.getWeight() + backpack.getWeight() > weightCapacity) { // if new item weight + backpack weight > weight capacity (14)
             gameMsg.channel.send(`You're carrying too much! Drop something first.`);
-        }else if(currentRoom == quiet_room && chosenItem == knife && currentRoom.getCreature() == gargoyle.getCreatureName()) {
+        }else if(currentRoom == quiet_room && chosenItem == knife && currentRoom.getCreatureName() == gargoyle.getCreatureName()) {
             gameMsg.channel.send(`Just as you begin to pry the knife from the gargoyle's hand... it moves! Turns out, it's alive. 
 And it's not happy you tried to disturb it from its meal. It attacks!`);
             // FIGHTING HAPPENS HERE GO GO
@@ -481,8 +498,52 @@ And it's not happy you tried to disturb it from its meal. It attacks!`);
         }
     }
 
-    giveItem(gameMsg, item, recipient) {
+    giveItem(item, recipient, gameMsg) {
+        let wantedItem = backpack.isInBackpack(item);
+        let wantedCreature = currentRoom.getCreature(recipient);
+    }
 
+    inspectThing(thing, gameMsg){
+        let this_room = "room";
+        console.log("input command:" + thing + ", " + this_room);
+        let bagString = backpack.isInBackpack(thing); // string of item in backpack
+        if(bagString != null) bagString = bagString.getName();
+        
+        let roomItemString = currentRoom.getItem(thing); // string of item within room
+        if(roomItemString != null) roomItemString = roomItemString.getName();
+
+        let roomString = currentRoom.getRoomName(); // string of room itself, or just "room"
+        console.log("room test: " + roomString);
+
+        let creatureString = currentRoom.getCreature(thing); // string of creature in room
+        if(creatureString != null) creatureString = creatureString.getCreatureName();
+      
+        console.log("creature test:" + creatureString);
+        switch(thing) {
+            case bagString:
+                gameMsg.channel.send(backpack.getBagDescrip(backpack.isInBackpack(thing)));
+                break;
+
+            case roomItemString:
+                gameMsg.channel.send(currentRoom.getItem(thing).getDetails());
+                break;
+
+            case roomString:
+                gameMsg.channel.send(currentRoom.getRoomDescription());
+                break;
+
+            case this_room:
+                gameMsg.channel.send(currentRoom.getRoomDescription());
+                break;
+
+            case creatureString:
+                gameMsg.channel.send(currentRoom.getCreature(thing).getCreatureDescription()); // get current room's creature object, get its description
+                break;
+
+            default:
+                gameMsg.channel.send(`That doesn't seem to be here.`);
+                break;
+        }
     }
 
     printDisplay(gameMsg) {

@@ -36,22 +36,24 @@ class Backpack {
 
     }
 
-    // returns desired item object if it is in backpack.
+    // returns desired item object if it is in backpack. Parameter is a string.
     isInBackpack(item) {
-        let resultString = false;
-        let resultIndex = null;
+        let resultItem = null;
         for(let index = 0; index < this.bag.length; index++) {
            if(this.bag[index].getName() == item) {
-               resultString = true;
-               resultIndex = this.bag[index];
+               resultItem = this.bag[index];
            }
         } 
 
-        return resultIndex;
+        return resultItem;
     }
 
     getBagItemName(item) {
         return item.getName()
+    }
+
+    getBagDescrip(item) {
+        return item.getDetails()
     }
 
     getBagList() {
