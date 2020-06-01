@@ -54,6 +54,8 @@ class Game {
                 client.on('message', async gameMsg=>{ 
                     if(gameBoolean.getGameBoolean() == false) return;
                     if(gameMsg.channel.type === 'dm') return;
+                    let testCommand = gameMsg.content.toLowerCase();
+                    console.log(testCommand);
                     let command = gameMsg.content.substring(config.Prefix.length).split(' '); // allows us to implement prefix at beginning
                     if(this.turnCheck(command[0]) == true) currentTurn++;
                    
@@ -134,10 +136,14 @@ class Game {
                             break;
 
                         case 'attack':
+                            let opponent = command[1];
                             if(!command[1]) {
                                 gameMsg.channel.send('You punch the air. nice.');
                             } else {
-                                gameMsg.channel.send('lmao she aint implemented yet');
+                                if(command[2]) {
+                                    opponent += " " + command[2];
+                                }
+                                this.attack(opponent, gameMsg);
                             }
                             break;
 
@@ -479,7 +485,7 @@ to cast this spell on but yourself, it looks like you were the one who fell asle
             gameMsg.channel.send(`That item isn't in this room.`);
         }else if(chosenItem.getWeight() + backpack.getWeight() > weightCapacity) { // if new item weight + backpack weight > weight capacity (14)
             gameMsg.channel.send(`You're carrying too much! Drop something first.`);
-        }else if(currentRoom == quiet_room && chosenItem == knife && currentRoom.getCreatureName() == gargoyle.getCreatureName()) {
+        }else if(currentRoom == quiet_room && chosenItem == knife && currentRoom.getCreature() == gargoyle) {
             gameMsg.channel.send(`Just as you begin to pry the knife from the gargoyle's hand... it moves! Turns out, it's alive. 
 And it's not happy you tried to disturb it from its meal. It attacks!`);
             // FIGHTING HAPPENS HERE GO GO
@@ -506,7 +512,6 @@ And it's not happy you tried to disturb it from its meal. It attacks!`);
     giveItem(item, recipient, gameMsg) {
         let wantedItem = backpack.isInBackpack(item); // gets item object
         let wantedCreature = currentRoom.getCreature(recipient); // gets creature object
-        console.log(dogFree);
         switch(wantedCreature) {
             case hellhound:
                 switch(wantedItem) {
@@ -548,7 +553,7 @@ Without warning, she raises her arm and lights the entire room in an explosion. 
                         break;
             
                     default:
-                        HP =- lone_fairy.getCreatureDmg();
+                        HP -= lone_fairy.getCreatureDmg();
                         currentRoom.removeCreature(recipient);
                         gameMsg.channel.send(`The fairy doesn't seem to like what you're holding out to it. Her sadness turns to anger, and she 
 leaps into the air with a flap of her wings. A shower of burning sparks burst from her raised palms. Ouch! 
@@ -599,6 +604,44 @@ leaps into the air with a flap of her wings. A shower of burning sparks burst fr
 
             default:
                 gameMsg.channel.send(`That doesn't seem to be here.`);
+                break;
+        }
+    }
+
+    attack(target, gameMsg) {
+        const wantedCreature = currentRoom.getCreature(target);
+        switch(wantedCreature) {
+            case gargoyle:
+                gargoyle.setCHealth(gargoyle.getCHealth() - 1);
+                gameMsg.channel.send(`You deliver a wimpy punch to the gargoyle's nose for 1 damage. 
+It doesn't seem to like that. In fact, it attacks!`);
+                // FIGHT
+                break;
+
+            case lone_fairy:
+                gameMsg.channel.send(`Attack the crying fairy? How could you? The most you can bring yourself to do is scuff your foot near her.`);
+                break;
+
+            case skeleton:
+                HP -= 1;
+                gameMsg.channel.send(`You throw your best punch at the skeletal arm. It scratches you in the process for 1 point of damage.
+But hey, after that one attack, it crumbles into a nice bone!`);
+                currentRoom.removeCreature(skeleton.getCreatureName());
+                currentRoom.createItem(normal_bone); 
+                break;
+
+            case hellhound:
+                HP -= 1;
+                gameMsg.channel.send(`The hellhound catches your fist in its mouth and bites down. You take 1 point of damage! 
+Maybe punching at it when it's so angry isn't a good idea...`);
+                break;
+            
+            case null:
+                gameMsg.channel.send(`That creature isn't here.`);
+                break;
+
+            default:
+                gameMsg.channel.send(`Your flimsy punch fails to connect with anything.`);
                 break;
         }
     }
