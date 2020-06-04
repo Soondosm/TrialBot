@@ -39,7 +39,7 @@ client.once('ready', () => {
 connection.connect(err => { // run when database is first connected
     if(err) throw err;
     console.log("Connected to the base of data!!!");
-    connection.query("SHOW TABLES", console.log);
+   // connection.query("SHOW TABLES", console.log);
 });
 
 // --------------------------------------------------------------------------------------------------

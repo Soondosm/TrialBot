@@ -4,6 +4,7 @@ const Item = require('/Users/soondos/Desktop/independent/TrialBot//objects/item.
 const Backpack = require('/Users/soondos/Desktop/independent/TrialBot/objects/backpack.js');
 const Hellhound = require('/Users/soondos/Desktop/independent/TrialBot/objects/hellhound.js');
 const Creature = require('/Users/soondos/Desktop/independent/TrialBot/objects/creature.js');
+const FightMode = require('/Users/soondos/Desktop/independent/TrialBot/objects/fightmode.js');
 
 const InGame = require('/Users/soondos/Desktop/independent/TrialBot/objects/ingame.js');
 let gameBoolean = new InGame(); // default = we are not in game. 
@@ -21,6 +22,8 @@ let hurt_fairy, dead_fairy, boss_key, burned_bone, normal_bone, knife, book_rest
 
 let lone_fairy, gargoyle, master, skeleton, fighting_creature; // creatures
 
+const validCommands = [`display`, `go`, `use`, `take`, `drop`, `give`, `inspect`, `attack`, `warp`, `help`];
+
 let currentRoom = new Room("current room", "this is our current room.");
 let randomRooms = new Array();
 const weightCapacity = 14;
@@ -28,8 +31,10 @@ const maxHealth = 20;
 let HP = 20;
 const turnLimit = 90;
 let currentTurn = 0;
-let dogCompanion, dogFree, fairyFriend, warpDestroyed, plantDestroyed;
-dogCompanion = dogFree = fairyFriend = warpDestroyed = plantDestroyed = false;
+let dogCompanion, dogFree, fairyFriend, warpDestroyed, plantDestroyed, hasBeenFight;
+dogCompanion = dogFree = fairyFriend = warpDestroyed = plantDestroyed = hasBeenFight = false;
+
+let fight = new FightMode();
 
 class Game {
     
@@ -49,7 +54,7 @@ class Game {
             inGame(client, input, connection) {               
 
                 client.on('message', async gameMsg=>{ 
-                    if(gameBoolean.getGameBoolean() == false) return;
+                    if(gameBoolean.getGameBoolean() == false || fight.getFightStatus() == true) return;
                     if(gameMsg.channel.type === 'dm') return;
                     let command = gameMsg.content.toLowerCase();
                     command = command.substring(config.Prefix.length).split(' '); // allows us to implement prefix at beginning
@@ -90,7 +95,7 @@ class Game {
                             if(!command[1]) {
                                 gameMsg.channel.send('take what?');
                             } else {
-                                this.takeItem(command[1], gameMsg);
+                                this.takeItem(client, command[1], gameMsg);
                             }
                             break;
 
@@ -490,15 +495,16 @@ to cast this spell on but yourself, it looks like you were the one who fell asle
 
     }
 
-    takeItem(item, gameMsg) {
+    takeItem(client, item, gameMsg) {
         const chosenItem = currentRoom.getItem(item);
         if(chosenItem == null) {
             gameMsg.channel.send(`That item isn't in this room.`);
         }else if(chosenItem.getWeight() + backpack.getWeight() > weightCapacity) { // if new item weight + backpack weight > weight capacity (14)
             gameMsg.channel.send(`You're carrying too much! Drop something first.`);
-        }else if(currentRoom == quiet_room && chosenItem == knife && currentRoom.getCreature() == gargoyle) {
+        }else if(currentRoom == quiet_room && chosenItem == knife && currentRoom.getCreature(gargoyle.getCreatureName()) == gargoyle) {
             gameMsg.channel.send(`Just as you begin to pry the knife from the gargoyle's hand... it moves! Turns out, it's alive. 
 And it's not happy you tried to disturb it from its meal. It attacks!`);
+            this.setupFight(client, gameMsg);
             // FIGHTING HAPPENS HERE GO GO
         } else {
             backpack.backpackAdd(chosenItem, currentRoom); 
@@ -736,7 +742,27 @@ Congratulations, young one,' she says. 'I think you'll make a fine apprentice. \
         } else {
             gameMsg.channel.send(`Your master throws her head back and laughs when you enter. How quaint!" She says. 
 "You're alive. We'll see how long that lasts..."  \n Your master attacks!`);
+            boss_room.createCreature(master);
             // FIGHT
+        }
+    }
+
+    fightResults() {
+        HP = fight.finalHealth();
+        
+
+    }
+
+    setupFight(client, gameMsg) {
+        if(hasBeenFight == false) {
+            hasBeenFight = true;
+            fight.prepareFight(client, HP, gargoyle, backpack, dogCompanion, gameMsg);
+            this.fightResults();
+         //   fight.setFightStatus(false);
+        } else { 
+            gameMsg.channel.send(fight.printWelcome());
+            fight.setFightStatus(true);
+            this.fightResults();
         }
     }
 
