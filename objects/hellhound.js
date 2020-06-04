@@ -48,6 +48,24 @@ class HellHound extends Creature {
     getFriendlyHealth() {
         return this.friendlyHealth;
     }
+
+    getSpeakChance(dogCompanion) {
+        let chance = Math.floor(Math.random() * 4); // number 1-4. if == 4, doge speaks. 25% speak chance.
+        let index;
+        if(chance == 3 && dogCompanion == true) {
+            index = Math.floor(Math.random() * dogSpeak.length);
+            return dogSpeak[index]
+        }
+        return null
+    }
+
+
+    getDogRoom(roomName) {
+        return dogRooms.get(roomName)
+    }
+
+
+
 }
 
 module.exports = HellHound;

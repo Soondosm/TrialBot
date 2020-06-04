@@ -101,7 +101,7 @@ class Room {
      */
     removeItem(item) {
         this.items.delete(item);
-        console.log("item deleted???");
+        console.log("item deleted???: " + item);
     }
 
 

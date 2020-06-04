@@ -22,11 +22,14 @@ class Backpack {
         console.log("item added to room.");
     }
 
-    // deletes the item from inventory. Can happen when user drops an item into room, or uses/gives an item.
+    /**
+     * deletes the item from inventory. Can happen when user drops an item into room, or uses/gives an item.
+     * @param {*} item item object, NOT its name 
+     */
     backpackDelete(item) {
         const index = this.bag.indexOf(item); // gives us the location of the item we want to remove within the array
         this.bag.splice(index, 1); // removes the 1 item at index (location, number of items removed)
-        console.log("item deleted from inventory.")
+        console.log("item deleted from inventory. " + item);
     }
 
     // deletes the item (spellbook growth, fire, or rest) from backpack upon use. returns a string to report to player.
